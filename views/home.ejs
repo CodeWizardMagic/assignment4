@@ -1,0 +1,12 @@
+<%- include('partials/header', { title: 'Home', user: user }) %>
+
+<div class="container">
+  <h1>Welcome to Secure App</h1>
+  <% if (user) { %>
+    <p>Hello, <strong><%= user.username %></strong>!</p>
+  <% } else { %>
+    <p>Please <a href="/auth/login">log in</a> or <a href="/auth/register">sign up</a>.</p>
+  <% } %>
+</div>
+
+<%- include('partials/footer') %>

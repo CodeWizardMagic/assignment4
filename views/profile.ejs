@@ -1,0 +1,22 @@
+<%- include('partials/header', { title: 'User Profile', user: user }) %>
+
+<div class="container text-center" style="max-width: 500px; margin: auto; padding: 20px;">
+  <h1 class="mb-4">User Profile</h1>
+
+  <div class="profile-image">
+    <% if (user.profilePicture) { %>
+      <img src="<%= user.profilePicture %>" alt="Avatar" class="rounded-circle" style="width: 150px; height: 150px; object-fit: cover;">
+    <% } else { %>
+      <img src="/images/default-avatar.png" alt="Default Avatar" class="rounded-circle" style="width: 150px; height: 150px; object-fit: cover;">
+    <% } %>
+  </div>
+
+  <div class="profile-details mt-3">
+    <p><strong>Username:</strong> <%= user.username %></p>
+    <p><strong>Email:</strong> <%= user.email %></p>
+  </div>
+
+  <a href="/profile/edit" class="btn btn-primary mt-3">Edit Profile</a>
+</div>
+
+<%- include('partials/footer') %>

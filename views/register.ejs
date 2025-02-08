@@ -1,0 +1,39 @@
+<%- include('partials/header', { title: 'Sign Up', user: null }) %>
+
+<div class="container" style="max-width: 500px; margin: auto; padding: 20px;">
+  <h1 class="mb-4 text-center">Sign Up</h1>
+
+  <% if (error) { %>
+    <p style="color: red; background: #ffe6e6; padding: 10px; border-radius: 5px; text-align: center;">
+      <%= error %>
+    </p>
+  <% } %>
+
+  <form action="/auth/register" method="POST" enctype="multipart/form-data" class="d-grid gap-3 text-start">
+    <div>
+      <label for="username" class="form-label">Username:</label>
+      <input type="text" name="username" id="username" required class="form-control" placeholder="Enter your username">
+    </div>
+    <div>
+      <label for="email" class="form-label">Email:</label>
+      <input type="email" name="email" id="email" required class="form-control" placeholder="Enter your email">
+    </div>
+    <div>
+      <label for="password" class="form-label">Password:</label>
+      <input type="password" name="password" id="password" required class="form-control" placeholder="Enter your password">
+    </div>
+    <div>
+      <label for="confirmPassword" class="form-label">Confirm Password:</label>
+      <input type="password" name="confirmPassword" id="confirmPassword" required class="form-control" placeholder="Confirm your password">
+    </div>
+    <div>
+      <label for="profilePicture" class="form-label">Avatar (optional):</label>
+      <input type="file" name="profilePicture" id="profilePicture" accept="image/*" class="form-control">
+    </div>
+    <button type="submit" class="btn btn-success w-100">Sign Up</button>
+  </form>
+
+  <p class="mt-3 text-center">Already have an account? <a href="/auth/login">Log in</a></p>
+</div>
+
+<%- include('partials/footer') %>

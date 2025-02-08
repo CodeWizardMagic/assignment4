@@ -1,0 +1,33 @@
+<%- include('partials/header', { title: 'Edit Profile', user: user }) %>
+
+<div class="container">
+  <h1>Edit Profile</h1>
+
+  <% if (error) { %>
+    <p style="color: red;"><%= error %></p>
+  <% } %>
+
+  <form action="/profile/edit" method="POST" enctype="multipart/form-data">
+    <div>
+      <label for="username">Username:</label>
+      <input type="text" name="username" id="username" value="<%= user.username %>" required>
+    </div>
+    
+    <div>
+      <label for="email">Email:</label>
+      <input type="email" name="email" id="email" value="<%= user.email %>" required>
+    </div>
+
+    <div>
+      <label for="profilePicture">Change Avatar:</label>
+      <input type="file" name="profilePicture" id="profilePicture" accept="image/*">
+      <% if (user.profilePicture) { %>
+        <img src="<%= user.profilePicture %>" alt="Avatar" style="width: 100px; height: 100px; margin-top: 10px;">
+      <% } %>
+    </div>
+
+    <button type="submit">Save Changes</button>
+  </form>
+</div>
+
+<%- include('partials/footer') %>
