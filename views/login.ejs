@@ -13,12 +13,22 @@
   <form action="/auth/login" method="POST" class="d-grid gap-3 text-start">
     <div>
       <label for="email" class="form-label">Email:</label>
-      <input type="email" name="email" id="email" required class="form-control" placeholder="Enter your email">
+      <input type="email" name="email" id="email" required class="form-control" 
+       placeholder="Enter your email" value="<%= email ? email : '' %>">
+
     </div>
     <div>
       <label for="password" class="form-label">Password:</label>
       <input type="password" name="password" id="password" required class="form-control" placeholder="Enter your password">
     </div>
+
+    <% if (showOTP) { %>
+      <div>
+        <label for="otp" class="form-label">Enter OTP:</label>
+        <input type="text" name="otp" id="otp" required class="form-control" placeholder="Enter the code from Google Authenticator">
+      </div>
+    <% } %>
+
     <button type="submit" class="btn btn-primary w-100">Sign In</button>
   </form>
 

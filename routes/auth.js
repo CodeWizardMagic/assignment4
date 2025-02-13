@@ -4,6 +4,39 @@ const bcrypt = require('bcrypt');
 const User = require('../models/User');
 const multer = require('multer');
 const path = require('path');
+const speakeasy = require('speakeasy');
+const qrcode = require('qrcode');
+
+router.get('/setup-2fa', async (req, res) => {
+  if (!req.session.user) {
+    return res.redirect('/auth/login');
+  }
+
+  const user = await User.findById(req.session.user.id);
+  if (!user) return res.redirect('/auth/login');
+
+  const secret = speakeasy.generateSecret({
+    length: 20,
+    name: `MyApp (${user.email})`
+  });
+
+  const otpauthUrl = speakeasy.otpauthURL({
+    secret: secret.ascii,
+    label: `MyApp:${user.email}`,
+    issuer: 'MyApp',
+    encoding: 'ascii'
+  });
+
+  qrcode.toDataURL(otpauthUrl, async (err, imageUrl) => {
+    if (err) return res.send('Error generating QR code');
+
+    user.twoFASecret = secret.base32;
+    await user.save();
+
+    res.render('setup-2fa', { qrCode: imageUrl, secret: secret.base32, error: null });
+  });
+});
+
 
 // Multer storage configuration for profile picture uploads
 const storage = multer.diskStorage({
@@ -46,10 +79,15 @@ router.post('/register', upload.single('profilePicture'), async (req, res) => {
       username,
       email,
       password: hashedPassword,
-      profilePicture: req.file ? '/uploads/' + req.file.filename : ''
+      profilePicture: req.file ? '/uploads/' + req.file.filename : '',
+      is2FAEnabled: false, 
+      twoFASecret: '' 
     });
     await newUser.save();
-    res.redirect('/auth/login');
+
+    req.session.user = { id: newUser._id, email: newUser.email };
+
+    res.redirect('/auth/setup-2fa');
   } catch (err) {
     console.error(err);
     res.render('register', { error: 'Registration failed. Please try again.' });
@@ -58,57 +96,65 @@ router.post('/register', upload.single('profilePicture'), async (req, res) => {
 
 // Login page
 router.get('/login', (req, res) => {
-  res.render('login', { error: null });
+  res.render('login', { email: '', error: null, showOTP: false });
 });
 
 // Handle login
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, otp } = req.body;
 
-  if (!email || !password) {
-    return res.render('login', { error: 'Please fill in all fields.' });
+  const user = await User.findOne({ email });
+  if (!user) {
+    return res.render('login', { error: 'User not found', email: email || '', showOTP: false });
   }
 
-  try {
-    const user = await User.findOne({ email });
-
-    if (!user) {
-      return res.render('login', { error: 'User not found.' });
-    }
-
-    if (user.locked) {
-      return res.render('login', { error: 'Your account is locked due to too many failed login attempts.' });
-    }
-
-    const match = await bcrypt.compare(password, user.password);
-
-    if (!match) {
-      user.failedLoginAttempts += 1;
-
-      if (user.failedLoginAttempts >= 5) {
-        user.locked = true;
-      }
-
-      await user.save();
-      return res.render('login', { error: 'Incorrect password.' });
-    }
-
-    user.failedLoginAttempts = 0;
-    user.locked = false;
-    await user.save();
-
-    req.session.user = {
-      id: user._id,
-      username: user.username,
-      email: user.email,
-      profilePicture: user.profilePicture
-    };
-
-    res.redirect('/profile');
-  } catch (err) {
-    console.error(err);
-    res.render('login', { error: 'Login failed. Please try again.' });
+  const match = await bcrypt.compare(password, user.password);
+  if (!match) {
+    return res.render('login', { error: 'Incorrect password', email: email || '', showOTP: false });
   }
+
+  if (user.is2FAEnabled) {
+    if (!otp) {
+      return res.render('login', { email, showOTP: true, error: 'Enter OTP from Google Authenticator' });
+    }
+
+    const isValidOTP = speakeasy.totp.verify({
+      secret: user.twoFASecret,
+      encoding: 'base32',
+      token: otp
+    });
+
+    if (!isValidOTP) {
+      return res.render('login', { email, showOTP: true, error: 'Invalid OTP code' });
+    }
+  }
+
+  req.session.user = { id: user._id, email: user.email };
+  res.redirect('/profile');
+});
+
+router.post('/enable-2fa', async (req, res) => {
+  if (!req.session.user) return res.redirect('/auth/login');
+
+  const user = await User.findById(req.session.user.id);
+  if (!user) return res.redirect('/auth/login');
+
+  const { otp } = req.body;
+
+  const isValidOTP = speakeasy.totp.verify({
+    secret: user.twoFASecret, 
+    encoding: 'base32',
+    token: otp
+  });
+
+  if (!isValidOTP) {
+    return res.render('setup-2fa', { error: 'Неверный OTP-код.', qrCode: '' });
+  }
+
+  user.is2FAEnabled = true;
+  await user.save();
+
+  res.redirect('/profile'); 
 });
 
 // Logout

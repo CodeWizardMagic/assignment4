@@ -1,13 +1,14 @@
-// models/User.js - Модель пользователя
 const mongoose = require('mongoose');
 
-const userSchema = new mongoose.Schema({
-    username: { type: String, required: true },
-    email:    { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    profilePicture: { type: String, default: '' },
+const UserSchema = new mongoose.Schema({
+    username: String,
+    email: String,
+    password: String,
+    profilePicture: String,
     failedLoginAttempts: { type: Number, default: 0 },
-    locked: { type: Boolean, default: false }
+    locked: { type: Boolean, default: false },
+    twoFASecret: String,
+    is2FAEnabled: { type: Boolean, default: false }
 });
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model('User', UserSchema);
